@@ -11,6 +11,11 @@ export default function TabTwoScreen() {
           Go to Apple Animation
         </Text>
       </Link>
+      <Link href="/(animations)/Two" asChild>
+        <Text>
+          Go to Circle Animation
+        </Text>
+      </Link>
     </View>
   );
 }

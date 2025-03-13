@@ -29,6 +29,7 @@ export default function StackLayout() {
         name="Two"
         options={{
           title: "Screen Two",
+          headerShown: false,
         }}
       />
     </Stack>
