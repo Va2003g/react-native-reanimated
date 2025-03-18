@@ -31,6 +31,11 @@ export default function TabTwoScreen() {
           Go to Scroll Animation
         </Text>
       </Link>
+      <Link href="/(animations)/Six" asChild>
+        <Text>
+          Go to Carousel Animation
+        </Text>
+      </Link>
     </View>
   );
 }
