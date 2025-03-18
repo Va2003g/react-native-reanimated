@@ -16,6 +16,21 @@ export default function TabTwoScreen() {
           Go to Circle Animation
         </Text>
       </Link>
+      <Link href="/(animations)/Three" asChild>
+        <Text>
+          Go to Pie Animation
+        </Text>
+      </Link>
+      <Link href="/(animations)/Four" asChild>
+        <Text>
+          Go to Pan Gesture
+        </Text>
+      </Link>
+      <Link href="/(animations)/Five" asChild>
+        <Text>
+          Go to Scroll Animation
+        </Text>
+      </Link>
     </View>
   );
 }

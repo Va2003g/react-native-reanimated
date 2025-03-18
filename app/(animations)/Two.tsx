@@ -1,11 +1,13 @@
 import { Easing, Pressable, StyleSheet, Text, View } from "react-native";
-import React from "react";
+import React, { useEffect } from "react";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withTiming,
   withRepeat,
+  FadeIn,
+  ZoomIn,
 } from "react-native-reanimated";
 const CircleAnimation = () => {
   const value = useSharedValue(0);
@@ -16,17 +18,14 @@ const CircleAnimation = () => {
       ],
     };
   });
+
   return (
     <View style={{ flex: 1 }}>
-      <Text style={{ color: "white", fontSize: 20, fontWeight: "bold", textAlign: "center", marginTop: 20 }}>
-        Circle Animations
-      </Text>
       <View
         style={{
           flex: 1,
           justifyContent: "center",
           alignItems: "center",
-          backgroundColor: "black",
         }}
       >
         <Animated.View
@@ -83,12 +82,58 @@ const CircleAnimation = () => {
             }}
           />
         </Animated.View>
+        <Animated.View
+          style={[
+            {
+              width: 400,
+              height: 400,
+              borderRadius: 1000,
+              position: "absolute",
+              zIndex: 10,
+              transform: [{ rotate: "22.5deg" }],
+            },
+            animatedStyle,
+          ]}
+          key={value.value}
+        >
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
+            <View
+              style={{
+                transform: [{ rotate: `${item * 45 + 22.5}deg` }],
+                width: 400,
+                height: 400,
+                borderRadius: 1000,
+                position: "absolute",
+              }}
+              key={item}
+            >
+              <Text
+                key={item}
+                style={{
+                  color: "white",
+                  fontSize: 20,
+                  fontWeight: "bold",
+                  textAlign: "center",
+                  marginTop: 20,
+                }}
+              >
+                {item}
+              </Text>
+            </View>
+          ))}
+        </Animated.View>
         <Pressable
           onPress={() => {
+            // console.log(
+            //   "Math.floor(Math.random() * 360)",
+            //   Math.floor(Math.random() * 360)
+            // );
             value.value = withTiming(
-              +value.value + Math.floor(Math.random() * 3600),
+              value.value +
+                Math.floor(Math.random() * 360) *
+                  Math.floor(Math.random() * 10),
               {
-                duration: 2000,
+                duration: 3000,
               }
             );
           }}
@@ -98,6 +143,7 @@ const CircleAnimation = () => {
             backgroundColor: "blue",
             borderRadius: 1000,
             position: "absolute",
+            zIndex: 100,
           }}
         />
       </View>

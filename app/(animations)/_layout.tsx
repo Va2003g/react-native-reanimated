@@ -15,7 +15,7 @@ export default function StackLayout() {
     <Stack
       screenOptions={{
         headerTintColor: Colors[colorScheme ?? "light"].tint,
-        headerShown: useClientOnlyValue(false, true),
+        headerShown: false,
       }}
     >
       <Stack.Screen
