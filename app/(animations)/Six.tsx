@@ -4,22 +4,34 @@ import { BACKGROUND_COLOR, Stories } from "@/constants/constants";
 import Story, {
   StoryListItemHeight,
   StoryListItemWidth,
+  WindowWidth,
 } from "@/components/Story";
-
+import Animated, { useAnimatedRef, useDerivedValue, useScrollViewOffset } from "react-native-reanimated";
 const Six = () => {
+  const animatedRef = useAnimatedRef<Animated.ScrollView>();
+  const scrollOffset = useScrollViewOffset(animatedRef);
+//   useDerivedValue(() => {
+//     console.log(scrollOffset.value);
+//   });
+  const ListPadding = WindowWidth - StoryListItemWidth;
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       <View style={{ height: StoryListItemHeight, width: "100%" }}>
-        <ScrollView
+        <Animated.ScrollView
           horizontal={true}
+          snapToInterval={StoryListItemWidth}
+          decelerationRate="fast"
+          disableIntervalMomentum={false}
+          scrollEventThrottle={16} // 1/60fps = 16ms
+          contentContainerStyle={{ width: StoryListItemWidth * Stories.length + ListPadding }}
+          ref={animatedRef}
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ width: StoryListItemWidth * Stories.length }}
         >
           {Stories.map((story, index) => (
-            <Story key={index} imageSource={story.image} index={index} />
+            <Story key={index} imageSource={story.image} index={index} scrollX={scrollOffset} />
           ))}
-        </ScrollView>
+        </Animated.ScrollView>
       </View>
     </View>
   );
