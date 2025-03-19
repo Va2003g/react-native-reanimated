@@ -21,25 +21,8 @@ import BulbmojiAngry from "../../components/BulbmojiAngry";
 import BulbmojiSad from "../../components/BulbmojiSad";
 import BulbmojiHappy from "../../components/BulbmojiHappy";
 import DragArrow from "@/components/DragArrow";
-
-// Mock hook for vibration since we're converting from web
-const useVibration = () => {
-  const isVibrationSupported = true;
-
-  const triggerVibration = (type: "singlePulse" | "longPulse") => {
-    if (type === "singlePulse") {
-      Vibration.vibrate(10);
-    } else {
-      Vibration.vibrate(100);
-    }
-  };
-
-  const stopVibration = () => {
-    Vibration.cancel();
-  };
-
-  return { isVibrationSupported, triggerVibration, stopVibration };
-};
+import { Gesture } from "react-native-gesture-handler";
+import { GestureDetector } from "react-native-gesture-handler";
 
 function SentimentWidget({
   setHeight,
@@ -52,9 +35,6 @@ function SentimentWidget({
   dragPercentage: number;
   setDragPercentage: (score: number) => void;
 }) {
-  const { isVibrationSupported, triggerVibration, stopVibration } =
-    useVibration();
-
   // Shared values for animations
   const circleSize = useSharedValue(68);
   const dragArrowPosition = useSharedValue({ top: 0, left: 0 });
@@ -66,17 +46,18 @@ function SentimentWidget({
   const [isDragging, setIsDragging] = useState(false);
   const [isArrowBeingDragged, setIsArrowBeingDragged] = useState(false);
 
-  // Refs for tracking gesture state
-  const startYRef = useRef(0);
-  const lastValidPosition = useRef({ percentage: 0, size: 68 });
-  const initialSizeRef = useRef(68);
-  const arrowDragStartYRef = useRef(0);
-  const arrowInitialCircleSizeRef = useRef(68);
-
   // Get screen dimensions for calculations
   const windowWidth = Dimensions.get("window").width;
   const windowHeight = Dimensions.get("window").height;
 
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const prevTranslateX = useSharedValue(0);
+  const prevTranslateY = useSharedValue(0);
+
+  const innerCircleRadius = 150;
+  const mediumCircleRadius = 300;
+  const outerCircleRadius = 430;
 
   // Calculate percentage based on circle size
   const calculatePercentage = (size: number): number => {
@@ -106,19 +87,10 @@ function SentimentWidget({
     }
   }, [dragPercentage]);
 
-  // Clean up vibration on unmount
-  useEffect(() => {
-    return () => {
-      if (isVibrationSupported) {
-        stopVibration();
-      }
-    };
-  }, []);
-
   // Initial position for drag arrow
   useEffect(() => {
     dragArrowPosition.value = {
-      top: 196 - 16, // Container height - arrow size/2
+      top: 96, // Container height - arrow size/2
       left: windowWidth / 2 - 16 + 10, // Centered + offset
     };
   }, []);
@@ -126,19 +98,23 @@ function SentimentWidget({
   // Animated styles
   const animatedCircleStyle = useAnimatedStyle(() => {
     return {
-      width: circleSize.value,
-      height: circleSize.value,
-      transform: [
-        { translateX: -circleSize.value / 2 },
-        { translateY: -circleSize.value / 2 },
-      ],
+      width: Math.sqrt(
+        translateX.value * translateX.value +
+          translateY.value * translateY.value
+      ),
+      height: Math.sqrt(
+        translateX.value * translateX.value +
+          translateY.value * translateY.value
+      ),
     };
   });
 
   const dragArrowAnimatedStyle = useAnimatedStyle(() => {
     return {
-      top: dragArrowPosition.value.top,
-      left: dragArrowPosition.value.left,
+      transform: [
+        { translateX: translateX.value },
+        { translateY: translateY.value },
+      ],
     };
   });
 
@@ -172,122 +148,6 @@ function SentimentWidget({
     };
   });
 
-  // Main drag panResponder
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (evt, gestureState) => {
-        setIsDragging(true);
-        startYRef.current = gestureState.y0;
-        initialSizeRef.current = circleSize.value;
-      },
-      onPanResponderMove: (evt, gestureState) => {
-        if (!isDragging) return;
-
-        const deltaY = startYRef.current - gestureState.moveY;
-        const containerHeight = 200; // Approx container height
-
-        // Calculate size change based on drag
-        const sizeChange = (deltaY / containerHeight) * 362 * 1.8;
-        const newSize = Math.max(
-          68,
-          Math.min(430, initialSizeRef.current + sizeChange)
-        );
-
-        // Calculate percentage
-        const percentage = calculatePercentage(newSize);
-
-        // Update values
-        circleSize.value = newSize;
-        runOnJS(setDragPercentage)(percentage);
-
-        // Store last valid position
-        lastValidPosition.current = {
-          percentage: percentage,
-          size: newSize,
-        };
-
-        // Update drag arrow position
-        const centerX = windowWidth / 2;
-        const centerY = 196; // Container height
-
-        const x = evt.nativeEvent.locationX;
-        const y = evt.nativeEvent.locationY;
-
-        const angle = Math.atan2(y - centerY, x - centerX);
-
-        dragArrowPosition.value = {
-          top: centerY + (newSize / 2) * Math.sin(angle) - 16,
-          left: centerX + (newSize / 2) * Math.cos(angle) - 16,
-        };
-
-        // Trigger vibration
-        runOnJS(triggerVibration)("singlePulse");
-      },
-      onPanResponderRelease: () => {
-        setIsDragging(false);
-
-        // Apply final values with a spring effect
-        circleSize.value = withSpring(lastValidPosition.current.size, {
-          damping: 15,
-          stiffness: 100,
-        });
-        runOnJS(setDragPercentage)(lastValidPosition.current.percentage);
-      },
-    })
-  ).current;
-
-  // Arrow drag panResponder
-  const arrowPanResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (evt, gestureState) => {
-        setIsArrowBeingDragged(true);
-        arrowDragStartYRef.current = gestureState.y0;
-        arrowInitialCircleSizeRef.current = circleSize.value;
-      },
-      onPanResponderMove: (evt, gestureState) => {
-        if (!isArrowBeingDragged) return;
-
-        // Calculate the change in position
-        const deltaY = arrowDragStartYRef.current - gestureState.moveY;
-
-        // Update circle size based on deltaY
-        const sizeChange = deltaY * 2; // Adjust sensitivity
-        const newSize = Math.max(
-          68,
-          Math.min(430, arrowInitialCircleSizeRef.current + sizeChange)
-        );
-
-        // Calculate percentage
-        const percentage = calculatePercentage(newSize);
-
-        // Update values
-        circleSize.value = newSize;
-        runOnJS(setDragPercentage)(percentage);
-
-        // Update dragArrowPosition to stay at the edge of the circle
-        const centerX = windowWidth / 2;
-        const centerY = 196; // Container height
-
-        const x = evt.nativeEvent.locationX;
-        const y = evt.nativeEvent.locationY;
-
-        const angle = Math.atan2(y - centerY, x - centerX);
-
-        dragArrowPosition.value = {
-          top: centerY + (newSize / 2) * Math.sin(angle) - 16,
-          left: centerX + (newSize / 2) * Math.cos(angle) - 16,
-        };
-      },
-      onPanResponderRelease: () => {
-        setIsArrowBeingDragged(false);
-      },
-    })
-  ).current;
-
   // Handle tap/click on container
   const handleContainerTap = (evt: any) => {
     console.log("handleContainerTap");
@@ -319,9 +179,27 @@ function SentimentWidget({
       top: centerY + (newSize / 2) * Math.sin(angle) - 16,
       left: centerX + (newSize / 2) * Math.cos(angle) - 16,
     };
-
-    triggerVibration("longPulse");
   };
+
+  const dragGesture = Gesture.Pan()
+    .onStart((event) => {
+      prevTranslateX.value = translateX.value;
+      prevTranslateY.value = translateY.value;
+    })
+    .onUpdate((event) => {
+      translateX.value = event.translationX + prevTranslateX.value;
+      translateY.value = event.translationY + prevTranslateY.value;
+      console.log(translateX.value, translateY.value);
+      const distance = Math.sqrt(
+        translateX.value * translateX.value +
+          translateY.value * translateY.value
+      );
+      console.log(distance);
+    })
+    .onEnd(() => {
+      //   translateX.value = withSpring(0);
+      //   translateY.value = withSpring(0);
+    });
 
   return (
     <View style={styles.container}>
@@ -334,15 +212,17 @@ function SentimentWidget({
         // onPress={handleContainerTap}
         style={{
           width: Dimensions.get("window").width,
+          position: "relative",
         }}
       >
         <View style={styles.circleContainer}>
           {/* Static circles */}
           <View style={styles.outerBoundaryCircle}></View>
           <View style={styles.mediumBoundaryCircle} />
-          <View style={styles.innerBoundaryCircle}>
-            <Text>Hello</Text>
-          </View>
+          <View style={styles.innerBoundaryCircle}></View>
+          <Animated.View
+            style={[styles.circle, animatedCircleStyle]}
+          ></Animated.View>
 
           {/* Emoji indicators */}
 
@@ -356,17 +236,11 @@ function SentimentWidget({
             <BulbmojiHappy width={25} height={25} />
           </Animated.View>
           {/* Drag arrow */}
-          <Pressable onPress={handleContainerTap}>
-            <Animated.View
-              style={[
-                styles.dragArrow,
-                dragArrowAnimatedStyle,
-              ]}
-              {...arrowPanResponder.panHandlers}
-            >
+          <GestureDetector gesture={dragGesture}>
+            <Animated.View style={[styles.dragArrow, dragArrowAnimatedStyle]}>
               <DragArrow />
             </Animated.View>
-          </Pressable>
+          </GestureDetector>
         </View>
       </View>
     </View>
@@ -459,20 +333,20 @@ const styles = StyleSheet.create({
   angryEmoji: {
     position: "absolute",
     bottom: 32,
-    left: "46.9%",
+    left: "49.75%",
     transform: [{ translateX: -12.5 }],
     zIndex: 600,
   },
   sadEmoji: {
     position: "absolute",
-    top: 60,
-    left: "41.5%",
+    top: 70,
+    left: "49.75%",
     transform: [{ translateX: -12.5 }],
     zIndex: 400,
   },
   happyEmoji: {
     position: "absolute",
-    top: 40,
+    top: 10,
     left: "49.75%",
     transform: [{ translateX: -12.5 }],
     zIndex: 500,
@@ -482,6 +356,19 @@ const styles = StyleSheet.create({
     width: 33,
     height: 33,
     zIndex: 9999,
+    bottom: 0,
+    left: "45%",
+  },
+  circle: {
+    position: "absolute",
+    width: 100,
+    height: 100,
+    borderRadius: "100%",
+    backgroundColor: "rgb(0, 82, 204)",
+    left: "50%",
+    bottom: 0,
+    transform: [{ translateX: -50 }, { translateY: 50 }],
+    zIndex: 60,
   },
 });
 
