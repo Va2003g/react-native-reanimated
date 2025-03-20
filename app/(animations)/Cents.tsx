@@ -16,17 +16,7 @@ import { GestureDetector } from "react-native-gesture-handler";
 
 const windowWidth = Dimensions.get("window").width;
 
-function SentimentWidget({
-  setHeight,
-  mainContainerRef,
-  dragPercentage,
-  setDragPercentage,
-}: {
-  mainContainerRef: React.RefObject<View>;
-  setHeight: React.Dispatch<React.SetStateAction<string>>;
-  dragPercentage: number;
-  setDragPercentage: (score: number) => void;
-}) {
+function SentimentWidget() {
   // Shared values for animations
   const dragArrowPosition = useSharedValue({ top: 0, left: 0 });
 
@@ -123,6 +113,31 @@ function SentimentWidget({
 
   // Handle tap/click on container
 
+  //   const dragGesture = Gesture.Pan()
+  //     .onStart((event) => {
+  //       prevTranslateX.value = translateX.value;
+  //       prevTranslateY.value = translateY.value;
+  //     })
+  //     .onUpdate((event) => {
+  //       // Calculate the new position
+  //       const newX = event.translationX + prevTranslateX.value;
+  //       const newY = event.translationY + prevTranslateY.value;
+
+  //       // Calculate distance from origin
+  //       const distance = Math.sqrt(newX * newX + newY * newY);
+
+  //       if (distance <= 215) {
+  //         // Inside the circle — move freely
+  //         translateX.value = newX;
+  //         translateY.value = newY;
+  //       } else {
+  //         // Outside the circle — constrain to circular path
+  //         const angle = Math.atan2(newY, newX);
+  //         translateX.value = Math.cos(angle) * 215;
+  //         translateY.value = Math.sin(angle) * 215;
+  //       }
+  //     });
+
   const dragGesture = Gesture.Pan()
     .onStart((event) => {
       prevTranslateX.value = translateX.value;
@@ -133,16 +148,19 @@ function SentimentWidget({
       const newX = event.translationX + prevTranslateX.value;
       const newY = event.translationY + prevTranslateY.value;
 
+      // Restrict vertical movement to upward only (Y values must be <= 0)
+      const restrictedY = Math.min(newY, 0);
+
       // Calculate distance from origin
-      const distance = Math.sqrt(newX * newX + newY * newY);
+      const distance = Math.sqrt(newX * newX + restrictedY * restrictedY);
 
       if (distance <= 215) {
-        // Inside the circle — move freely
+        // Inside the circle — move freely (but with Y restriction)
         translateX.value = newX;
-        translateY.value = newY;
+        translateY.value = restrictedY;
       } else {
         // Outside the circle — constrain to circular path
-        const angle = Math.atan2(newY, newX);
+        const angle = Math.atan2(restrictedY, newX);
         translateX.value = Math.cos(angle) * 215;
         translateY.value = Math.sin(angle) * 215;
       }
