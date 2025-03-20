@@ -111,32 +111,6 @@ function SentimentWidget() {
     };
   });
 
-  // Handle tap/click on container
-
-  //   const dragGesture = Gesture.Pan()
-  //     .onStart((event) => {
-  //       prevTranslateX.value = translateX.value;
-  //       prevTranslateY.value = translateY.value;
-  //     })
-  //     .onUpdate((event) => {
-  //       // Calculate the new position
-  //       const newX = event.translationX + prevTranslateX.value;
-  //       const newY = event.translationY + prevTranslateY.value;
-
-  //       // Calculate distance from origin
-  //       const distance = Math.sqrt(newX * newX + newY * newY);
-
-  //       if (distance <= 215) {
-  //         // Inside the circle — move freely
-  //         translateX.value = newX;
-  //         translateY.value = newY;
-  //       } else {
-  //         // Outside the circle — constrain to circular path
-  //         const angle = Math.atan2(newY, newX);
-  //         translateX.value = Math.cos(angle) * 215;
-  //         translateY.value = Math.sin(angle) * 215;
-  //       }
-  //     });
 
   const dragGesture = Gesture.Pan()
     .onStart((event) => {
