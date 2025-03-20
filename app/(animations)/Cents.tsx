@@ -1,19 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  PanResponder,
-  StyleSheet,
-  Dimensions,
-  Image,
-  Vibration,
-  TouchableWithoutFeedback,
-  Pressable,
-} from "react-native";
+import { View, Text, StyleSheet, Dimensions } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
   withTiming,
   runOnJS,
   useAnimatedReaction,
@@ -24,6 +13,8 @@ import BulbmojiHappy from "../../components/BulbmojiHappy";
 import DragArrow from "@/components/DragArrow";
 import { Gesture } from "react-native-gesture-handler";
 import { GestureDetector } from "react-native-gesture-handler";
+
+const windowWidth = Dimensions.get("window").width;
 
 function SentimentWidget({
   setHeight,
@@ -44,8 +35,6 @@ function SentimentWidget({
   const [isArrowBeingDragged, setIsArrowBeingDragged] = useState(false);
 
   // Get screen dimensions for calculations
-  const windowWidth = Dimensions.get("window").width;
-  const windowHeight = Dimensions.get("window").height;
 
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -56,11 +45,9 @@ function SentimentWidget({
   const mediumCircleRadius = 300;
   const outerCircleRadius = 430;
   const [percentage, setPercentage] = useState(0);
-
-  // Calculate percentage based on circle size
-  const calculatePercentage = (size: number): number => {
-    return Math.round((size / 430) * 100);
-  };
+  const distance = Math.sqrt(
+    translateX.value * translateX.value + translateY.value * translateY.value
+  );
 
   // Initial position for drag arrow
   useEffect(() => {
@@ -72,9 +59,6 @@ function SentimentWidget({
 
   // Animated styles
   const animatedCircleStyle = useAnimatedStyle(() => {
-    const distance = Math.sqrt(
-      translateX.value * translateX.value + translateY.value * translateY.value
-    );
     return {
       width: distance * 2,
       height: distance,
@@ -85,10 +69,6 @@ function SentimentWidget({
   });
 
   const dragArrowAnimatedStyle = useAnimatedStyle(() => {
-    const distance = Math.sqrt(
-      translateX.value * translateX.value + translateY.value * translateY.value
-    );
-    // runOnJS(setPercentage)(calculatePercentage(distance));
     return {
       transform: [
         { translateX: translateX.value },
@@ -98,9 +78,9 @@ function SentimentWidget({
   });
 
   const angryEmojiAnimatedStyle = useAnimatedStyle(() => {
-    const distance = Math.sqrt(
-      translateX.value * translateX.value + translateY.value * translateY.value
-    );
+    // const distance = Math.sqrt(
+    //   translateX.value * translateX.value + translateY.value * translateY.value
+    // );
 
     // Instead of returning different objects, use conditional values
     const calculatedOpacity = distance > 75 ? 0 : 1;
@@ -120,9 +100,9 @@ function SentimentWidget({
   });
 
   const sadEmojiAnimatedStyle = useAnimatedStyle(() => {
-    const distance = Math.sqrt(
-      translateX.value * translateX.value + translateY.value * translateY.value
-    );
+    // const distance = Math.sqrt(
+    //   translateX.value * translateX.value + translateY.value * translateY.value
+    // );
 
     // Instead of returning different objects, use conditional values
     const calculatedOpacity = distance > 150 ? 0 : 1;
@@ -140,7 +120,6 @@ function SentimentWidget({
       zIndex: 600,
     };
   });
-
 
   // Handle tap/click on container
 
@@ -196,7 +175,6 @@ function SentimentWidget({
 
       <View
         style={{
-          width: Dimensions.get("window").width,
           position: "relative",
         }}
       >
@@ -219,10 +197,7 @@ function SentimentWidget({
               </View>
             </View>
             <Animated.View style={[styles.circle, animatedCircleStyle]}>
-              {Math.sqrt(
-                translateX.value * translateX.value +
-                  translateY.value * translateY.value
-              ) > 150 && (
+              {distance > 150 && (
                 <View style={[styles.mediumBoundaryWithBorderCircle]}>
                   <View
                     style={[
@@ -253,36 +228,27 @@ function SentimentWidget({
                   />
                 </View>
               )}
-              {Math.sqrt(
-                translateX.value * translateX.value +
-                  translateY.value * translateY.value
-              ) < 150 &&
-                Math.sqrt(
-                  translateX.value * translateX.value +
-                    translateY.value * translateY.value
-                ) > 75 && (
+              {distance < 150 && distance > 75 && (
+                <View
+                  style={[
+                    styles.innerBoundaryWithBorderCircle,
+                    { position: "relative", zIndex: 100 },
+                  ]}
+                >
                   <View
-                    style={[
-                      styles.innerBoundaryWithBorderCircle,
-                      { position: "relative", zIndex: 100 },
-                    ]}
-                  >
-                    <View
-                      style={{
-                        width: "100%",
-                        borderWidth: 2,
-                        borderColor: "rgb(0, 82, 204)",
-                        backgroundColor: "red",
-                        position: "absolute",
-                        zIndex: 200,
-                      }}
-                    />
-                  </View>
-                )}
+                    style={{
+                      width: "100%",
+                      borderWidth: 2,
+                      borderColor: "rgb(0, 82, 204)",
+                      backgroundColor: "red",
+                      position: "absolute",
+                      zIndex: 200,
+                    }}
+                  />
+                </View>
+              )}
             </Animated.View>
           </View>
-
-          {/* Emoji indicators */}
 
           {/* Drag arrow */}
           <GestureDetector gesture={dragGesture}>
@@ -299,17 +265,22 @@ function SentimentWidget({
 const styles = StyleSheet.create({
   container: {
     padding: 8,
-    width: "100%",
+    width: windowWidth,
     justifyContent: "center",
-    // alignItems: "center",
-    flex: 1,
+    // flex: 1,
+    top: "50%",
+    transform: [{ translateY: -100 }],
+    backgroundColor: "#F3F4F5",
+    borderWidth: 1,
+    borderColor: "#F3F4F5",
+    borderRadius: 12,
   },
   header: {
     marginBottom: 12,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#E0E0E0",
+    // backgroundColor: "#E0E0E0",
     padding: 8,
     paddingHorizontal: 16,
     borderRadius: 17,
@@ -330,9 +301,10 @@ const styles = StyleSheet.create({
     width: "100%",
     backgroundColor: "white",
     borderRadius: 12,
+    alignItems: "center",
   },
   outerBoundaryCircle: {
-    width: 430,
+    width: windowWidth * 0.94,
     height: 215,
     borderTopLeftRadius: 215,
     borderTopRightRadius: 215,
@@ -391,17 +363,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   angryEmoji: {
-    // position: "absolute",
-    // bottom: 32,
-    // left: "49.75%",
-    // transform: [{ translateX: -12.5 }],
     zIndex: 600,
   },
   sadEmoji: {
-    // position: "absolute",
-    // top: 70,
-    // left: "49.75%",
-    // transform: [{ translateX: -12.5 }],
     zIndex: 400,
   },
   happyEmoji: {
