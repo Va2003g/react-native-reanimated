@@ -5,7 +5,6 @@ import Svg, {
   Path, 
   G, 
   Defs, 
-  RadialGradient, 
   Stop, 
   ClipPath, 
   LinearGradient

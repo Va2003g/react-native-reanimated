@@ -16,6 +16,7 @@ import Animated, {
   withSpring,
   withTiming,
   runOnJS,
+  useAnimatedReaction,
 } from "react-native-reanimated";
 import BulbmojiAngry from "../../components/BulbmojiAngry";
 import BulbmojiSad from "../../components/BulbmojiSad";
@@ -36,11 +37,7 @@ function SentimentWidget({
   setDragPercentage: (score: number) => void;
 }) {
   // Shared values for animations
-  const circleSize = useSharedValue(68);
   const dragArrowPosition = useSharedValue({ top: 0, left: 0 });
-  const angryOpacity = useSharedValue(0);
-  const sadOpacity = useSharedValue(0);
-  const happyOpacity = useSharedValue(0);
 
   // Local state
   const [isDragging, setIsDragging] = useState(false);
@@ -58,34 +55,12 @@ function SentimentWidget({
   const innerCircleRadius = 150;
   const mediumCircleRadius = 300;
   const outerCircleRadius = 430;
+  const [percentage, setPercentage] = useState(0);
 
   // Calculate percentage based on circle size
   const calculatePercentage = (size: number): number => {
-    if (size <= 150) {
-      return Math.round(((size - 68) / (150 - 68)) * 33);
-    } else if (size <= 299) {
-      return Math.round(33 + ((size - 150) / (299 - 150)) * 33);
-    } else {
-      return Math.round(66 + ((size - 299) / (430 - 299)) * 34);
-    }
+    return Math.round((size / 430) * 100);
   };
-
-  // Update emoji visibility based on percentage
-  useEffect(() => {
-    if (dragPercentage <= 33) {
-      angryOpacity.value = withTiming(1, { duration: 300 });
-      sadOpacity.value = withTiming(0.6, { duration: 300 });
-      happyOpacity.value = withTiming(0, { duration: 300 });
-    } else if (dragPercentage <= 66) {
-      angryOpacity.value = withTiming(0, { duration: 300 });
-      sadOpacity.value = withTiming(1, { duration: 300 });
-      happyOpacity.value = withTiming(0.6, { duration: 300 });
-    } else {
-      angryOpacity.value = withTiming(0, { duration: 300 });
-      sadOpacity.value = withTiming(0, { duration: 300 });
-      happyOpacity.value = withTiming(1, { duration: 300 });
-    }
-  }, [dragPercentage]);
 
   // Initial position for drag arrow
   useEffect(() => {
@@ -97,19 +72,23 @@ function SentimentWidget({
 
   // Animated styles
   const animatedCircleStyle = useAnimatedStyle(() => {
+    const distance = Math.sqrt(
+      translateX.value * translateX.value + translateY.value * translateY.value
+    );
     return {
-      width: Math.sqrt(
-        translateX.value * translateX.value +
-          translateY.value * translateY.value
-      ),
-      height: Math.sqrt(
-        translateX.value * translateX.value +
-          translateY.value * translateY.value
-      ),
+      width: distance * 2,
+      height: distance,
+      borderTopLeftRadius: distance,
+      borderTopRightRadius: distance,
+      zIndex: 60,
     };
   });
 
   const dragArrowAnimatedStyle = useAnimatedStyle(() => {
+    const distance = Math.sqrt(
+      translateX.value * translateX.value + translateY.value * translateY.value
+    );
+    // runOnJS(setPercentage)(calculatePercentage(distance));
     return {
       transform: [
         { translateX: translateX.value },
@@ -119,67 +98,97 @@ function SentimentWidget({
   });
 
   const angryEmojiAnimatedStyle = useAnimatedStyle(() => {
+    const distance = Math.sqrt(
+      translateX.value * translateX.value + translateY.value * translateY.value
+    );
+
+    // Instead of returning different objects, use conditional values
+    const calculatedOpacity = distance > 75 ? 0 : 1;
+    const calculatedScale = distance > 75 ? 0 : 1;
+    const calculatedTranslateY = distance > 75 ? -20 : 0;
+
     return {
-      opacity: angryOpacity.value,
+      opacity: withTiming(calculatedOpacity, {
+        duration: 2000,
+      }),
       transform: [
-        { scale: angryOpacity.value },
-        { translateY: (1 - angryOpacity.value) * 10 },
+        { translateY: withTiming(calculatedTranslateY, { duration: 500 }) },
+        { scale: withTiming(calculatedScale, { duration: 500 }) },
       ],
+      zIndex: 600,
     };
   });
 
   const sadEmojiAnimatedStyle = useAnimatedStyle(() => {
+    const distance = Math.sqrt(
+      translateX.value * translateX.value + translateY.value * translateY.value
+    );
+
+    // Instead of returning different objects, use conditional values
+    const calculatedOpacity = distance > 150 ? 0 : 1;
+    const calculatedScale = distance > 150 ? 0 : 1;
+    const calculatedTranslateY = distance > 150 ? -20 : 0;
+
     return {
-      opacity: sadOpacity.value,
       transform: [
-        { scale: sadOpacity.value },
-        { translateY: (1 - sadOpacity.value) * 10 },
+        { translateY: withTiming(calculatedTranslateY, { duration: 500 }) },
+        { scale: withTiming(calculatedScale, { duration: 500 }) },
       ],
+      opacity: withTiming(calculatedOpacity, {
+        duration: 400,
+      }),
+      zIndex: 600,
     };
   });
 
-  const happyEmojiAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: happyOpacity.value,
-      transform: [
-        { scale: happyOpacity.value },
-        { translateY: (1 - happyOpacity.value) * 10 },
-      ],
-    };
+  const outerCircleAnimatedStyle = useAnimatedStyle(() => {
+    const distance = Math.sqrt(
+      translateX.value * translateX.value + translateY.value * translateY.value
+    );
+    if (distance >= 215)
+      return {
+        borderStyle: "dotted",
+        borderWidth: 5,
+        borderColor: "white",
+        zIndex: 500,
+        backgroundColor: "rgb(0, 82, 204)",
+      };
+    return {};
+  });
+  const mediumCircleAnimatedStyle = useAnimatedStyle(() => {
+    const distance = Math.sqrt(
+      translateX.value * translateX.value + translateY.value * translateY.value
+    );
+    console.log(distance);
+    if (distance >= 150)
+      return {
+        borderStyle: "dotted",
+        borderWidth: 5,
+        borderColor: "white",
+        zIndex: 500,
+        backgroundColor: "rgb(0, 82, 204)",
+      };
+    return {};
+  });
+  const innerCircleAnimatedStyle = useAnimatedStyle(() => {
+    const distance = Math.sqrt(
+      translateX.value * translateX.value + translateY.value * translateY.value
+    );
+    console.log(distance);
+    if (distance >= 75) {
+      console.log("here");
+      return {
+        borderStyle: "dotted",
+        borderWidth: 5,
+        borderColor: "red",
+        zIndex: 500,
+        backgroundColor: "black",
+      };
+    }
+    return styles.innerBoundaryCircle;
   });
 
   // Handle tap/click on container
-  const handleContainerTap = (evt: any) => {
-    console.log("handleContainerTap");
-    const x = evt.nativeEvent.locationX;
-    const y = evt.nativeEvent.locationY;
-
-    const centerX = windowWidth / 2;
-    const centerY = 196; // Container height
-
-    // Calculate distance and angle
-    const distance = Math.sqrt(
-      Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2)
-    );
-    const angle = Math.atan2(y - centerY, x - centerX);
-
-    // Set new size
-    const maxSize = 430;
-    const newSize = Math.min(Math.max(68, distance * 2), maxSize);
-    const percentage = calculatePercentage(newSize);
-    // Animate to new values
-    circleSize.value = withSpring(newSize, {
-      damping: 15,
-      stiffness: 100,
-    });
-    setDragPercentage(percentage);
-
-    // Update arrow position
-    dragArrowPosition.value = {
-      top: centerY + (newSize / 2) * Math.sin(angle) - 16,
-      left: centerX + (newSize / 2) * Math.cos(angle) - 16,
-    };
-  };
 
   const dragGesture = Gesture.Pan()
     .onStart((event) => {
@@ -187,29 +196,51 @@ function SentimentWidget({
       prevTranslateY.value = translateY.value;
     })
     .onUpdate((event) => {
-      translateX.value = event.translationX + prevTranslateX.value;
-      translateY.value = event.translationY + prevTranslateY.value;
-      console.log(translateX.value, translateY.value);
+      // Calculate the new position
+      const newX = event.translationX + prevTranslateX.value;
+      const newY = event.translationY + prevTranslateY.value;
+
+      // Calculate distance from origin
+      const distance = Math.sqrt(newX * newX + newY * newY);
+
+      if (distance <= 215) {
+        // Inside the circle — move freely
+        translateX.value = newX;
+        translateY.value = newY;
+      } else {
+        // Outside the circle — constrain to circular path
+        const angle = Math.atan2(newY, newX);
+        translateX.value = Math.cos(angle) * 215;
+        translateY.value = Math.sin(angle) * 215;
+      }
+    });
+
+  useAnimatedReaction(
+    () => {
       const distance = Math.sqrt(
         translateX.value * translateX.value +
           translateY.value * translateY.value
       );
-      console.log(distance);
-    })
-    .onEnd(() => {
-      //   translateX.value = withSpring(0);
-      //   translateY.value = withSpring(0);
-    });
+      return distance;
+    },
+    (distance) => {
+      if (distance !== null && !isNaN(distance)) {
+        // Added safety check
+        const percentage = Math.round((distance / 215) * 100);
+        runOnJS(setPercentage)(percentage);
+      }
+    },
+    [translateX.value, translateY.value]
+  );
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerText}>How likely I am to return...</Text>
-        <Text style={styles.percentageText}>{dragPercentage}%</Text>
+        <Text style={styles.percentageText}>{percentage}%</Text>
       </View>
 
       <View
-        // onPress={handleContainerTap}
         style={{
           width: Dimensions.get("window").width,
           position: "relative",
@@ -217,24 +248,50 @@ function SentimentWidget({
       >
         <View style={styles.circleContainer}>
           {/* Static circles */}
-          <View style={styles.outerBoundaryCircle}></View>
-          <View style={styles.mediumBoundaryCircle} />
-          <View style={styles.innerBoundaryCircle}></View>
-          <Animated.View
-            style={[styles.circle, animatedCircleStyle]}
-          ></Animated.View>
+          <View style={[outerCircleAnimatedStyle, styles.outerBoundaryCircle]}>
+            <Animated.View style={[styles.happyEmoji]}>
+              <BulbmojiHappy width={25} height={25} />
+            </Animated.View>
+            <View
+              style={[mediumCircleAnimatedStyle, styles.mediumBoundaryCircle]}
+            >
+              <Animated.View style={[styles.sadEmoji, sadEmojiAnimatedStyle]}>
+                <BulbmojiSad width={25} height={25} />
+              </Animated.View>
+              <View
+                style={[innerCircleAnimatedStyle, styles.innerBoundaryCircle]}
+              >
+                <Animated.View
+                  style={[styles.angryEmoji, angryEmojiAnimatedStyle]}
+                >
+                  <BulbmojiAngry width={25} height={25} />
+                </Animated.View>
+              </View>
+            </View>
+            <Animated.View style={[styles.circle, animatedCircleStyle]}>
+              {Math.sqrt(
+                translateX.value * translateX.value +
+                  translateY.value * translateY.value
+              ) > 150 && (
+                <View style={[styles.mediumBoundaryWithBorderCircle]}>
+                  <View style={[styles.innerBoundaryWithBorderCircle]}></View>
+                </View>
+              )}
+              {Math.sqrt(
+                translateX.value * translateX.value +
+                  translateY.value * translateY.value
+              ) < 150 &&
+                Math.sqrt(
+                  translateX.value * translateX.value +
+                    translateY.value * translateY.value
+                ) > 75 && (
+                  <View style={[styles.innerBoundaryWithBorderCircle]}></View>
+                )}
+            </Animated.View>
+          </View>
 
           {/* Emoji indicators */}
 
-          <Animated.View style={[styles.sadEmoji]}>
-            <BulbmojiSad width={25} height={25} />
-          </Animated.View>
-          <Animated.View style={[styles.angryEmoji]}>
-            <BulbmojiAngry width={25} height={25} />
-          </Animated.View>
-          <Animated.View style={[styles.happyEmoji]}>
-            <BulbmojiHappy width={25} height={25} />
-          </Animated.View>
           {/* Drag arrow */}
           <GestureDetector gesture={dragGesture}>
             <Animated.View style={[styles.dragArrow, dragArrowAnimatedStyle]}>
@@ -252,7 +309,7 @@ const styles = StyleSheet.create({
     padding: 8,
     width: "100%",
     justifyContent: "center",
-    alignItems: "center",
+    // alignItems: "center",
     flex: 1,
   },
   header: {
@@ -278,77 +335,89 @@ const styles = StyleSheet.create({
   },
   circleContainer: {
     position: "relative",
-    height: 196,
     width: "100%",
     backgroundColor: "white",
     borderRadius: 12,
-    overflow: "hidden",
   },
   outerBoundaryCircle: {
-    position: "absolute",
     width: 430,
-    height: 430,
-    borderRadius: 215,
-    borderWidth: 1,
+    height: 215,
+    borderTopLeftRadius: 215,
+    borderTopRightRadius: 215,
+    justifyContent: "flex-end",
+    alignItems: "center",
+    borderWidth: 2,
     borderStyle: "solid",
     borderColor: "rgba(224, 224, 224, 0.5)",
-    left: "50%",
-    bottom: 0,
-    transform: [{ translateX: -215 }, { translateY: 215 }],
+    gap: 23,
   },
   mediumBoundaryCircle: {
-    position: "absolute",
-    width: 299,
-    height: 299,
-    borderRadius: 150,
-    borderWidth: 1,
+    width: 300,
+    height: 150,
+    borderTopLeftRadius: 150,
+    borderTopRightRadius: 150,
+    borderWidth: 2,
     borderStyle: "solid",
     borderColor: "rgba(224, 224, 224, 0.5)",
-    left: "50%",
-    bottom: 0,
-    transform: [{ translateX: -150 }, { translateY: 150 }],
-    zIndex: 40,
+    justifyContent: "flex-end",
+    alignItems: "center",
+    backgroundColor: "#FAFAFA",
+    gap: 23,
+  },
+  mediumBoundaryWithBorderCircle: {
+    width: 300,
+    height: 150,
+    borderTopLeftRadius: 150,
+    borderTopRightRadius: 150,
+    borderWidth: 2,
+    borderStyle: "dotted",
+    borderColor: "white",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    borderTopWidth: 2,
+  },
+  innerBoundaryWithBorderCircle: {
+    width: 150,
+    height: 75,
+    borderTopLeftRadius: 75,
+    borderTopRightRadius: 75,
+    borderWidth: 2,
+    borderStyle: "dotted",
+    borderColor: "white",
+    justifyContent: "flex-end",
+    alignItems: "center",
   },
   innerBoundaryCircle: {
-    position: "absolute",
     width: 150,
-    height: 150,
-    borderRadius: 75,
-    borderWidth: 1,
+    height: 75,
+    borderTopLeftRadius: 75,
+    borderTopRightRadius: 75,
+    borderWidth: 2,
     borderStyle: "solid",
+    backgroundColor: "#e0e0e080",
     borderColor: "rgba(224, 224, 224, 0.5)",
-    left: "50%",
-    bottom: 0,
-    transform: [{ translateX: -75 }, { translateY: 75 }],
-    zIndex: 60,
-  },
-  mainCircle: {
-    position: "absolute",
-    backgroundColor: "#0052CC",
-    borderRadius: 215,
-    left: "50%",
-    bottom: 0,
-    zIndex: 300,
+    justifyContent: "center",
+    alignItems: "center",
   },
   angryEmoji: {
-    position: "absolute",
-    bottom: 32,
-    left: "49.75%",
-    transform: [{ translateX: -12.5 }],
+    // position: "absolute",
+    // bottom: 32,
+    // left: "49.75%",
+    // transform: [{ translateX: -12.5 }],
     zIndex: 600,
   },
   sadEmoji: {
-    position: "absolute",
-    top: 70,
-    left: "49.75%",
-    transform: [{ translateX: -12.5 }],
+    // position: "absolute",
+    // top: 70,
+    // left: "49.75%",
+    // transform: [{ translateX: -12.5 }],
     zIndex: 400,
   },
   happyEmoji: {
-    position: "absolute",
-    top: 10,
-    left: "49.75%",
-    transform: [{ translateX: -12.5 }],
+    // position: "absolute",
+    // top: 10,
+    // left: "49.75%",
+    // transform: [{ translateX: -12.5 }],
     zIndex: 500,
   },
   dragArrow: {
@@ -363,12 +432,14 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: 100,
     height: 100,
-    borderRadius: "100%",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    borderTopLeftRadius: "100%",
+    borderTopRightRadius: "100%",
     backgroundColor: "rgb(0, 82, 204)",
-    left: "50%",
     bottom: 0,
-    transform: [{ translateX: -50 }, { translateY: 50 }],
     zIndex: 60,
+    alignSelf: "center",
   },
 });
 
