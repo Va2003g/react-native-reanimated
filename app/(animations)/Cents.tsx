@@ -141,52 +141,6 @@ function SentimentWidget({
     };
   });
 
-  const outerCircleAnimatedStyle = useAnimatedStyle(() => {
-    const distance = Math.sqrt(
-      translateX.value * translateX.value + translateY.value * translateY.value
-    );
-    if (distance >= 215)
-      return {
-        borderStyle: "dotted",
-        borderWidth: 5,
-        borderColor: "white",
-        zIndex: 500,
-        backgroundColor: "rgb(0, 82, 204)",
-      };
-    return {};
-  });
-  const mediumCircleAnimatedStyle = useAnimatedStyle(() => {
-    const distance = Math.sqrt(
-      translateX.value * translateX.value + translateY.value * translateY.value
-    );
-    console.log(distance);
-    if (distance >= 150)
-      return {
-        borderStyle: "dotted",
-        borderWidth: 5,
-        borderColor: "white",
-        zIndex: 500,
-        backgroundColor: "rgb(0, 82, 204)",
-      };
-    return {};
-  });
-  const innerCircleAnimatedStyle = useAnimatedStyle(() => {
-    const distance = Math.sqrt(
-      translateX.value * translateX.value + translateY.value * translateY.value
-    );
-    console.log(distance);
-    if (distance >= 75) {
-      console.log("here");
-      return {
-        borderStyle: "dotted",
-        borderWidth: 5,
-        borderColor: "red",
-        zIndex: 500,
-        backgroundColor: "black",
-      };
-    }
-    return styles.innerBoundaryCircle;
-  });
 
   // Handle tap/click on container
 
@@ -248,19 +202,15 @@ function SentimentWidget({
       >
         <View style={styles.circleContainer}>
           {/* Static circles */}
-          <View style={[outerCircleAnimatedStyle, styles.outerBoundaryCircle]}>
+          <View style={[styles.outerBoundaryCircle]}>
             <Animated.View style={[styles.happyEmoji]}>
               <BulbmojiHappy width={25} height={25} />
             </Animated.View>
-            <View
-              style={[mediumCircleAnimatedStyle, styles.mediumBoundaryCircle]}
-            >
+            <View style={[styles.mediumBoundaryCircle]}>
               <Animated.View style={[styles.sadEmoji, sadEmojiAnimatedStyle]}>
                 <BulbmojiSad width={25} height={25} />
               </Animated.View>
-              <View
-                style={[innerCircleAnimatedStyle, styles.innerBoundaryCircle]}
-              >
+              <View style={[styles.innerBoundaryCircle]}>
                 <Animated.View
                   style={[styles.angryEmoji, angryEmojiAnimatedStyle]}
                 >
@@ -274,7 +224,33 @@ function SentimentWidget({
                   translateY.value * translateY.value
               ) > 150 && (
                 <View style={[styles.mediumBoundaryWithBorderCircle]}>
-                  <View style={[styles.innerBoundaryWithBorderCircle]}></View>
+                  <View
+                    style={[
+                      styles.innerBoundaryWithBorderCircle,
+                      { position: "relative", zIndex: 100 },
+                    ]}
+                  >
+                    <View
+                      style={{
+                        width: "100%",
+                        borderWidth: 2,
+                        borderColor: "rgb(0, 82, 204)",
+                        backgroundColor: "red",
+                        position: "absolute",
+                        zIndex: 200,
+                      }}
+                    />
+                  </View>
+                  <View
+                    style={{
+                      width: "100%",
+                      borderWidth: 2,
+                      borderColor: "rgb(0, 82, 204)",
+                      backgroundColor: "red",
+                      position: "absolute",
+                      zIndex: 300,
+                    }}
+                  />
                 </View>
               )}
               {Math.sqrt(
@@ -285,7 +261,23 @@ function SentimentWidget({
                   translateX.value * translateX.value +
                     translateY.value * translateY.value
                 ) > 75 && (
-                  <View style={[styles.innerBoundaryWithBorderCircle]}></View>
+                  <View
+                    style={[
+                      styles.innerBoundaryWithBorderCircle,
+                      { position: "relative", zIndex: 100 },
+                    ]}
+                  >
+                    <View
+                      style={{
+                        width: "100%",
+                        borderWidth: 2,
+                        borderColor: "rgb(0, 82, 204)",
+                        backgroundColor: "red",
+                        position: "absolute",
+                        zIndex: 200,
+                      }}
+                    />
+                  </View>
                 )}
             </Animated.View>
           </View>
@@ -374,7 +366,6 @@ const styles = StyleSheet.create({
     borderColor: "white",
     justifyContent: "flex-end",
     alignItems: "center",
-    borderTopWidth: 2,
   },
   innerBoundaryWithBorderCircle: {
     width: 150,
@@ -414,10 +405,6 @@ const styles = StyleSheet.create({
     zIndex: 400,
   },
   happyEmoji: {
-    // position: "absolute",
-    // top: 10,
-    // left: "49.75%",
-    // transform: [{ translateX: -12.5 }],
     zIndex: 500,
   },
   dragArrow: {
