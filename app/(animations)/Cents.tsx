@@ -111,7 +111,6 @@ function SentimentWidget() {
     };
   });
 
-
   const dragGesture = Gesture.Pan()
     .onStart((event) => {
       prevTranslateX.value = translateX.value;
@@ -260,6 +259,7 @@ const styles = StyleSheet.create({
     width: windowWidth,
     justifyContent: "center",
     // flex: 1,
+    // only for testing purposes
     top: "50%",
     transform: [{ translateY: -100 }],
     backgroundColor: "#F3F4F5",
@@ -290,10 +290,14 @@ const styles = StyleSheet.create({
   },
   circleContainer: {
     position: "relative",
-    width: "100%",
+    width: "90%",
     backgroundColor: "white",
     borderRadius: 12,
     alignItems: "center",
+    overflow: "hidden",
+    marginHorizontal: "auto",
+    height: 200,
+    // transform: [{ translateY: -15 }],
   },
   outerBoundaryCircle: {
     width: windowWidth * 0.94,
@@ -306,6 +310,7 @@ const styles = StyleSheet.create({
     borderStyle: "solid",
     borderColor: "rgba(224, 224, 224, 0.5)",
     gap: 23,
+    transform: [{ translateY: -15 }],
   },
   mediumBoundaryCircle: {
     width: 300,
