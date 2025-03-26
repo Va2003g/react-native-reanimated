@@ -10,17 +10,17 @@ import Svg, {
   LinearGradient
 } from 'react-native-svg';
 
-const BulbmojiAngry = ({ width, height }) => {
+const BulbmojiAngry = ({ width, height, opacity }) => {
   return (
     <Svg
-    width={width}
-    height={height}
-    viewBox="0 0 125 125"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <G clipPath="url(#clip0_26_243)">
-      <Rect width={125} height={125} rx={21} fill="#FFC107" />
+      width={width}
+      height={height}
+      viewBox="0 0 125 125"
+      fill="none"
+      opacity={opacity}
+    >
+      <G clipPath="url(#clip0_26_243)">
+        <Rect width={125} height={125} rx={21} fill="#FFC107" />
       <Rect x={3.5} y={3.5} width={118} height={118} rx={17.5} fill="#FFC107" />
       <Rect
         x={3.5}

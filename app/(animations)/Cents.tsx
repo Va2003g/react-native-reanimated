@@ -13,18 +13,23 @@ import BulbmojiHappy from "../../components/BulbmojiHappy";
 import DragArrow from "@/components/DragArrow";
 import { Gesture } from "react-native-gesture-handler";
 import { GestureDetector } from "react-native-gesture-handler";
+import { TapGestureHandler } from "react-native-gesture-handler";
 
 const windowWidth = Dimensions.get("window").width;
+import {
+  configureReanimatedLogger,
+  ReanimatedLogLevel,
+} from "react-native-reanimated";
+
+configureReanimatedLogger({
+  level: ReanimatedLogLevel.warn,
+  strict: false,
+});
 
 function SentimentWidget() {
   // Shared values for animations
   const dragArrowPosition = useSharedValue({ top: 0, left: 0 });
 
-  // Local state
-  const [isDragging, setIsDragging] = useState(false);
-  const [isArrowBeingDragged, setIsArrowBeingDragged] = useState(false);
-
-  // Get screen dimensions for calculations
 
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -68,9 +73,6 @@ function SentimentWidget() {
   });
 
   const angryEmojiAnimatedStyle = useAnimatedStyle(() => {
-    // const distance = Math.sqrt(
-    //   translateX.value * translateX.value + translateY.value * translateY.value
-    // );
 
     // Instead of returning different objects, use conditional values
     const calculatedOpacity = distance > 75 ? 0 : 1;
@@ -90,9 +92,6 @@ function SentimentWidget() {
   });
 
   const sadEmojiAnimatedStyle = useAnimatedStyle(() => {
-    // const distance = Math.sqrt(
-    //   translateX.value * translateX.value + translateY.value * translateY.value
-    // );
 
     // Instead of returning different objects, use conditional values
     const calculatedOpacity = distance > 150 ? 0 : 1;
@@ -157,6 +156,29 @@ function SentimentWidget() {
     [translateX.value, translateY.value]
   );
 
+  const handleTap = (x: number, y: number) => {
+    // Calculate the new position for the dragger
+    const newX = x - windowWidth / 2;
+    const newY = y - 215; 
+
+    // Restrict vertical movement to upward only (Y values must be <= 0)
+    const restrictedY = Math.min(newY, 0);
+
+    // distance from origin
+    const distance = Math.sqrt(newX * newX + restrictedY * restrictedY);
+
+    if (distance <= 215) {
+      // Inside the circle — move freely (but with Y restriction)
+      translateX.value = newX;
+      translateY.value = restrictedY;
+    } else {
+      // Outside the circle — constrain to circular path
+      const angle = Math.atan2(restrictedY, newX);
+      translateX.value = Math.cos(angle) * 215;
+      translateY.value = Math.sin(angle) * 215;
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -171,25 +193,67 @@ function SentimentWidget() {
       >
         <View style={styles.circleContainer}>
           {/* Static circles */}
-          <View style={[styles.outerBoundaryCircle]}>
-            <Animated.View style={[styles.happyEmoji]}>
-              <BulbmojiHappy width={25} height={25} />
-            </Animated.View>
-            <View style={[styles.mediumBoundaryCircle]}>
-              <Animated.View style={[styles.sadEmoji, sadEmojiAnimatedStyle]}>
-                <BulbmojiSad width={25} height={25} />
+          <TapGestureHandler
+            onHandlerStateChange={({ nativeEvent }) => {
+              if (nativeEvent.state === 4) {
+                // 4 corresponds to the 'END' state
+                handleTap(nativeEvent.x, nativeEvent.y);
+              }
+            }}
+          >
+            <View style={[styles.outerBoundaryCircle]}>
+              <Animated.View style={[styles.happyEmoji]}>
+                <BulbmojiHappy width={25} height={25} />
               </Animated.View>
-              <View style={[styles.innerBoundaryCircle]}>
-                <Animated.View
-                  style={[styles.angryEmoji, angryEmojiAnimatedStyle]}
-                >
-                  <BulbmojiAngry width={25} height={25} />
+              <View style={[styles.mediumBoundaryCircle]}>
+                <Animated.View style={[styles.sadEmoji, sadEmojiAnimatedStyle]}>
+                  <BulbmojiSad width={25} height={25} />
                 </Animated.View>
+                <View style={[styles.innerBoundaryCircle]}>
+                  <Animated.View
+                    style={[styles.angryEmoji, angryEmojiAnimatedStyle]}
+                  >
+                    <BulbmojiAngry
+                      width={25}
+                      height={25}
+                      opacity={angryEmojiAnimatedStyle.opacity}
+                    />
+                  </Animated.View>
+                </View>
               </View>
-            </View>
-            <Animated.View style={[styles.circle, animatedCircleStyle]}>
-              {distance > 150 && (
-                <View style={[styles.mediumBoundaryWithBorderCircle]}>
+              <Animated.View style={[styles.circle, animatedCircleStyle]}>
+                {distance > 150 && (
+                  <View style={[styles.mediumBoundaryWithBorderCircle]}>
+                    <View
+                      style={[
+                        styles.innerBoundaryWithBorderCircle,
+                        { position: "relative", zIndex: 100 },
+                      ]}
+                    >
+                      <View
+                        style={{
+                          width: "100%",
+                          borderWidth: 2,
+                          borderColor: "rgb(0, 82, 204)",
+                          backgroundColor: "red",
+                          position: "absolute",
+                          zIndex: 200,
+                        }}
+                      />
+                    </View>
+                    <View
+                      style={{
+                        width: "100%",
+                        borderWidth: 2,
+                        borderColor: "rgb(0, 82, 204)",
+                        backgroundColor: "red",
+                        position: "absolute",
+                        zIndex: 300,
+                      }}
+                    />
+                  </View>
+                )}
+                {distance < 150 && distance > 75 && (
                   <View
                     style={[
                       styles.innerBoundaryWithBorderCircle,
@@ -207,39 +271,10 @@ function SentimentWidget() {
                       }}
                     />
                   </View>
-                  <View
-                    style={{
-                      width: "100%",
-                      borderWidth: 2,
-                      borderColor: "rgb(0, 82, 204)",
-                      backgroundColor: "red",
-                      position: "absolute",
-                      zIndex: 300,
-                    }}
-                  />
-                </View>
-              )}
-              {distance < 150 && distance > 75 && (
-                <View
-                  style={[
-                    styles.innerBoundaryWithBorderCircle,
-                    { position: "relative", zIndex: 100 },
-                  ]}
-                >
-                  <View
-                    style={{
-                      width: "100%",
-                      borderWidth: 2,
-                      borderColor: "rgb(0, 82, 204)",
-                      backgroundColor: "red",
-                      position: "absolute",
-                      zIndex: 200,
-                    }}
-                  />
-                </View>
-              )}
-            </Animated.View>
-          </View>
+                )}
+              </Animated.View>
+            </View>
+          </TapGestureHandler>
 
           {/* Drag arrow */}
           <GestureDetector gesture={dragGesture}>
@@ -272,7 +307,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    // backgroundColor: "#E0E0E0",
     padding: 8,
     paddingHorizontal: 16,
     borderRadius: 17,
@@ -281,7 +315,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
     color: "black",
-    letterSpacing: -0.52,
   },
   percentageText: {
     fontSize: 20,
@@ -297,7 +330,6 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginHorizontal: "auto",
     height: 200,
-    // transform: [{ translateY: -15 }],
   },
   outerBoundaryCircle: {
     width: windowWidth * 0.94,
