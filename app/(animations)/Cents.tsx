@@ -30,7 +30,6 @@ function SentimentWidget() {
   // Shared values for animations
   const dragArrowPosition = useSharedValue({ top: 0, left: 0 });
 
-
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
   const prevTranslateX = useSharedValue(0);
@@ -54,8 +53,10 @@ function SentimentWidget() {
 
   // Animated styles
   const animatedCircleStyle = useAnimatedStyle(() => {
+    const width = distance >= 212 ? distance * 1.9 : distance * 2;
     return {
-      width: distance * 2,
+      width: width,
+      // width: distance * 1.9,
       height: distance,
       borderTopLeftRadius: distance,
       borderTopRightRadius: distance,
@@ -73,7 +74,6 @@ function SentimentWidget() {
   });
 
   const angryEmojiAnimatedStyle = useAnimatedStyle(() => {
-
     // Instead of returning different objects, use conditional values
     const calculatedOpacity = distance > 75 ? 0 : 1;
     const calculatedScale = distance > 75 ? 0 : 1;
@@ -92,7 +92,6 @@ function SentimentWidget() {
   });
 
   const sadEmojiAnimatedStyle = useAnimatedStyle(() => {
-
     // Instead of returning different objects, use conditional values
     const calculatedOpacity = distance > 150 ? 0 : 1;
     const calculatedScale = distance > 150 ? 0 : 1;
